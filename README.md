@@ -9,14 +9,18 @@ Serviço de impressão para Android que disponibiliza a impressora térmica Blue
 - comunicação Bluetooth clássica por RFCOMM/SPP;
 - suporte anunciado a 203 DPI, impressão monocromática e margens zero;
 - solicitação da permissão `BLUETOOTH_CONNECT` no Android 12 ou superior;
-- geração de uma impressão de teste em ESC/POS.
+- seleção persistente entre dispositivos Bluetooth já pareados;
+- renderização de documentos PDF em bitmap monocromático com dithering;
+- envio raster ESC/POS em blocos, com suporte a múltiplas páginas e cancelamento;
+- impressão de teste em CP860 para caracteres do português;
+- indicação de disponibilidade baseada no Bluetooth e no pareamento.
 
 ## Requisitos
 
 - Android Studio e Android SDK 37;
 - JDK 25, conforme o toolchain do Gradle incluído no projeto;
 - dispositivo Android 6.0 (API 23) ou superior com Bluetooth;
-- impressora pareada cujo nome contenha `IMP-TMP58ABT`.
+- impressora térmica ESC/POS com Bluetooth clássico e perfil SPP.
 
 ## Compilação
 
@@ -34,12 +38,13 @@ O APK de desenvolvimento será gerado em `app/build/outputs/apk/debug/`. Para in
 
 ## Como usar
 
-1. Pareie a IMP-TMP58ABT nas configurações de Bluetooth do Android.
+1. Pareie a impressora nas configurações de Bluetooth do Android.
 2. Instale e abra o aplicativo.
 3. Autorize o acesso a dispositivos Bluetooth, quando solicitado.
-4. Toque em **CONFIGURAÇÕES DE IMPRESSÃO**.
-5. Ative o serviço **TMP58 Print Service**.
-6. Em um aplicativo compatível, escolha **Imprimir** e selecione `IMP-TMP58ABT`.
+4. Toque em **Selecionar impressora** e escolha o dispositivo pareado.
+5. Use **Imprimir teste** para validar a conexão e os caracteres.
+6. Toque em **Configurações de impressão** e ative o serviço.
+7. Em um aplicativo compatível, escolha **Imprimir** e selecione a impressora configurada.
 
 ## Arquitetura
 
@@ -47,7 +52,9 @@ O APK de desenvolvimento será gerado em `app/build/outputs/apk/debug/`. Para in
 - `ThermalPrintService.kt`: recebe e controla os trabalhos de impressão.
 - `ThermalPrinterDiscoverySession.kt`: registra a impressora no sistema.
 - `BluetoothPrinter.kt`: procura dispositivos pareados e gerencia a conexão SPP.
-- `EscPos.kt`: monta os bytes enviados à impressora.
+- `PdfDocumentRenderer.kt`: renderiza páginas PDF com 384 pontos de largura.
+- `EscPos.kt`: aplica dithering e monta os comandos raster ESC/POS.
+- `PrinterPreferences.kt`: mantém a impressora e os parâmetros selecionados.
 
 O código-fonte está em `app/src/main/java/com/robson/tmp58printservice/`; recursos e metadados Android ficam em `app/src/main/res/`.
 
@@ -59,11 +66,11 @@ O código-fonte está em `app/src/main/java/com/robson/tmp58printservice/`; recu
 ./gradlew lintDebug
 ```
 
-O segundo comando exige um dispositivo ou emulador conectado. Alterações na comunicação Bluetooth também devem ser validadas com uma impressora física.
+O segundo comando exige um dispositivo ou emulador conectado. Há testes unitários para o empacotamento raster e a codificação CP860, além de um teste instrumental para o fluxo PDF → ESC/POS. Alterações na comunicação Bluetooth também devem ser validadas com uma impressora física. O workflow em `.github/workflows/android.yml` executa testes e lint a cada push ou pull request.
 
 ## Limitações atuais
 
-A versão atual não interpreta o documento fornecido pelo trabalho de impressão. Ao receber um trabalho, ela envia o conteúdo fixo produzido por `EscPos.teste()`. O status anunciado na descoberta também não confirma previamente se a impressora está ligada ou conectável. Conversão de PDF/imagem para bitmap ESC/POS, seleção de outros modelos e acompanhamento de status ainda não estão implementados.
+O status “disponível” confirma que o Bluetooth está ativo e que o dispositivo está pareado, mas não garante que a impressora esteja ligada ou com papel. A largura padrão é 384 pontos e a página de código do teste é CP860; alguns modelos podem exigir valores diferentes. O projeto ainda não consulta papel, tampa, temperatura ou outros estados específicos do equipamento. PDFs muito longos são limitados a 12.000 pontos por página para controlar o uso de memória.
 
 ## Contribuição
 

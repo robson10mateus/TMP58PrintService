@@ -1,0 +1,33 @@
+name: Android CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obter o código
+        uses: actions/checkout@v4
+
+      - name: Configurar o JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Configurar o Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar a plataforma Android
+        run: sdkmanager "platforms;android-37"
+
+      - name: Configurar o Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Executar testes e lint
+        run: ./gradlew testDebugUnitTest lintDebug
