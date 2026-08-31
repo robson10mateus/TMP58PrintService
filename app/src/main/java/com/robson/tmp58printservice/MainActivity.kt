@@ -12,14 +12,12 @@ import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
-import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     companion object {
         private const val BLUETOOTH_PERMISSION_REQUEST = 100
     }
 
-    private val executor = Executors.newSingleThreadExecutor()
     private lateinit var status: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,11 +29,6 @@ class MainActivity : Activity() {
     override fun onResume() {
         super.onResume()
         updateStatus()
-    }
-
-    override fun onDestroy() {
-        executor.shutdownNow()
-        super.onDestroy()
     }
 
     override fun onRequestPermissionsResult(
@@ -67,10 +60,6 @@ class MainActivity : Activity() {
         layout.addView(Button(this).apply {
             text = getString(R.string.select_printer)
             setOnClickListener { selectPrinter() }
-        })
-        layout.addView(Button(this).apply {
-            text = getString(R.string.print_test)
-            setOnClickListener { printTest() }
         })
         layout.addView(Button(this).apply {
             text = getString(R.string.print_settings)
@@ -109,35 +98,6 @@ class MainActivity : Activity() {
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
-    }
-
-    private fun printTest() {
-        if (!BluetoothPrinter.hasConnectPermission(this)) {
-            requestBluetoothPermission()
-            return
-        }
-
-        val configuration = PrinterPreferences.load(this)
-        executor.execute {
-            val printer = BluetoothPrinter(this)
-            val success = try {
-                printer.connect(configuration) &&
-                    printer.send(EscPos.testPage(configuration.name))
-            } catch (_: Exception) {
-                false
-            } finally {
-                printer.disconnect()
-            }
-
-            runOnUiThread {
-                Toast.makeText(
-                    this,
-                    if (success) R.string.test_sent else R.string.test_failed,
-                    Toast.LENGTH_LONG
-                ).show()
-                updateStatus()
-            }
-        }
     }
 
     private fun updateStatus() {

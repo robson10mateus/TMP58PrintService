@@ -68,9 +68,20 @@ class PdfDocumentRenderer(
                             widthDots,
                             height
                         )
+                        val contentHeight = findContentHeight(
+                            pixels = pixels,
+                            width = widthDots,
+                            height = height,
+                            threshold = threshold
+                        )
                         onPageReady(
                             pageIndex + 1,
-                            EscPos.rasterImage(widthDots, height, pixels, threshold)
+                            EscPos.rasterImage(
+                                widthDots,
+                                contentHeight,
+                                pixels.copyOf(widthDots * contentHeight),
+                                threshold
+                            )
                         )
                     } finally {
                         bitmap.recycle()
@@ -90,5 +101,28 @@ class PdfDocumentRenderer(
         if (isCancelled() || Thread.currentThread().isInterrupted) {
             throw CancellationException("Impressão cancelada")
         }
+    }
+
+    internal fun findContentHeight(
+        pixels: IntArray,
+        width: Int,
+        height: Int,
+        threshold: Int
+    ): Int {
+        for (y in height - 1 downTo 0) {
+            val rowStart = y * width
+            val rowHasInk = (0 until width).any { x ->
+                val color = pixels[rowStart + x]
+                val alpha = color ushr 24 and 0xFF
+                val red = color ushr 16 and 0xFF
+                val green = color ushr 8 and 0xFF
+                val blue = color and 0xFF
+                val gray = (red * 299 + green * 587 + blue * 114) / 1000f
+                val paperGray = 255f - alpha / 255f * (255f - gray)
+                paperGray < threshold
+            }
+            if (rowHasInk) return y + 1
+        }
+        return 1
     }
 }
