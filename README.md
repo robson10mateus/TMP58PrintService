@@ -1,13 +1,16 @@
-# TMP58 Print Service
+# ESC/POS Print Service
 
-Serviço de impressão para Android que disponibiliza a impressora térmica Bluetooth **IMP-TMP58ABT** no menu de impressão do sistema. O aplicativo localiza uma impressora já pareada, abre uma conexão Bluetooth Serial Port Profile (SPP) e envia comandos ESC/POS.
+Serviço de impressão para Android que disponibiliza impressoras térmicas Bluetooth ESC/POS no menu de impressão do sistema. O aplicativo localiza uma impressora já pareada, abre uma conexão Bluetooth Serial Port Profile (SPP) e permite configurar a largura de cada equipamento.
 
 ## Funcionalidades
 
 - integração com a API `PrintService` do Android;
-- descoberta da IMP-TMP58ABT como impressora térmica de 58 mm;
+- descoberta da impressora térmica Bluetooth selecionada;
 - comunicação Bluetooth clássica por RFCOMM/SPP;
-- suporte anunciado a 203 DPI, impressão monocromática e margens zero;
+- presets de 58 mm/384 pontos e 80 mm/576 pontos;
+- perfil personalizado com largura física, largura imprimível, DPI e limiar monocromático;
+- configuração de papel persistida separadamente para cada endereço Bluetooth;
+- impressão monocromática e margens zero;
 - solicitação da permissão `BLUETOOTH_CONNECT` no Android 12 ou superior;
 - seleção persistente entre dispositivos Bluetooth já pareados;
 - renderização de documentos PDF em bitmap monocromático com dithering;
@@ -42,7 +45,7 @@ O APK de desenvolvimento será gerado em `app/build/outputs/apk/debug/`. Para in
 2. Instale e abra o aplicativo.
 3. Autorize o acesso a dispositivos Bluetooth, quando solicitado.
 4. Toque em **Selecionar impressora** e escolha o dispositivo pareado.
-5. Use **Imprimir teste** para validar a conexão e os caracteres.
+5. Selecione o preset de 58 mm, 80 mm ou configure o papel manualmente.
 6. Toque em **Configurações de impressão** e ative o serviço.
 7. Em um aplicativo compatível, escolha **Imprimir** e selecione a impressora configurada.
 
@@ -52,9 +55,9 @@ O APK de desenvolvimento será gerado em `app/build/outputs/apk/debug/`. Para in
 - `ThermalPrintService.kt`: recebe e controla os trabalhos de impressão.
 - `ThermalPrinterDiscoverySession.kt`: registra a impressora no sistema.
 - `BluetoothPrinter.kt`: procura dispositivos pareados e gerencia a conexão SPP.
-- `PdfDocumentRenderer.kt`: renderiza páginas PDF com 384 pontos de largura.
+- `PdfDocumentRenderer.kt`: renderiza páginas PDF na largura configurada.
 - `EscPos.kt`: aplica dithering e monta os comandos raster ESC/POS.
-- `PrinterPreferences.kt`: mantém a impressora e os parâmetros selecionados.
+- `PrinterPreferences.kt`: mantém a impressora e o perfil de papel de cada dispositivo.
 
 O código-fonte está em `app/src/main/java/com/robson/tmp58printservice/`; recursos e metadados Android ficam em `app/src/main/res/`.
 
@@ -70,7 +73,7 @@ O segundo comando exige um dispositivo ou emulador conectado. Há testes unitár
 
 ## Limitações atuais
 
-O status “disponível” confirma que o Bluetooth está ativo e que o dispositivo está pareado, mas não garante que a impressora esteja ligada ou com papel. A largura padrão é 384 pontos e a página de código do teste é CP860; alguns modelos podem exigir valores diferentes. O projeto ainda não consulta papel, tampa, temperatura ou outros estados específicos do equipamento. PDFs muito longos são limitados a 12.000 pontos por página para controlar o uso de memória.
+O status “disponível” confirma que o Bluetooth está ativo e que o dispositivo está pareado, mas não garante que a impressora esteja ligada ou com papel. O tamanho não pode ser detectado de forma universal por ESC/POS e deve ser configurado no aplicativo. O serviço anuncia uma página virtual de 200 mm de comprimento e remove o espaço branco final antes do envio. O projeto não oferece suporte a BLE, USB, Wi-Fi, ZPL ou protocolos proprietários e ainda não consulta papel, tampa, temperatura ou outros estados específicos do equipamento. PDFs muito longos são limitados a 12.000 pontos por página para controlar o uso de memória.
 
 ## Contribuição
 

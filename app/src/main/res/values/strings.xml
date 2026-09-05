@@ -1,7 +1,8 @@
 <resources>
-    <string name="app_name">TMP58 Print Service</string>
-    <string name="app_description">Serviço de impressão térmica Bluetooth ESC/POS.</string>
+    <string name="app_name">ESC/POS Print Service</string>
+    <string name="app_description">Serviço de impressão térmica Bluetooth com largura configurável.</string>
     <string name="select_printer">Selecionar impressora</string>
+    <string name="configure_paper">Configurar papel</string>
     <string name="print_settings">Configurações de impressão</string>
     <string name="no_paired_device">Nenhum dispositivo Bluetooth pareado foi encontrado</string>
     <string name="select_printer_title">Selecione a impressora</string>
@@ -10,8 +11,23 @@
     <string name="printer_unavailable">indisponível</string>
     <string name="printer_status">Impressora: %1$s\n%2$s\nStatus: %3$s\n</string>
     <string name="paired_device_label">%1$s\n%2$s</string>
+    <string name="select_paper_title">Selecione o papel</string>
+    <string name="paper_profile_58">58 mm — 384 pontos, 203 DPI</string>
+    <string name="paper_profile_80">80 mm — 576 pontos, 203 DPI</string>
+    <string name="paper_profile_custom">Personalizado</string>
+    <string name="custom_paper_title">Papel personalizado</string>
+    <string name="paper_width_mm">Largura do papel (mm)</string>
+    <string name="printable_width_dots">Largura imprimível (pontos)</string>
+    <string name="printer_dpi">Resolução (DPI)</string>
+    <string name="print_threshold">Limiar monocromático (0–255)</string>
+    <string name="save">Salvar</string>
+    <string name="fill_all_fields">Preencha todos os campos com números inteiros</string>
+    <string name="invalid_configuration">Configuração inválida</string>
+    <string name="paper_configuration_saved">Configuração do papel salva</string>
+    <string name="integer_value">%d</string>
+    <string name="paper_configuration">Papel: %1$d mm\n%2$s\nResolução: %3$d DPI</string>
     <plurals name="printer_width_dots">
-        <item quantity="one">Largura: %d ponto</item>
-        <item quantity="other">Largura: %d pontos</item>
+        <item quantity="one">Largura imprimível: %d ponto</item>
+        <item quantity="other">Largura imprimível: %d pontos</item>
     </plurals>
 </resources>

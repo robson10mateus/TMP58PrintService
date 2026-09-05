@@ -8,8 +8,11 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.text.InputType
 import android.widget.Button
+import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
 
@@ -62,6 +65,10 @@ class MainActivity : Activity() {
             setOnClickListener { selectPrinter() }
         })
         layout.addView(Button(this).apply {
+            text = getString(R.string.configure_paper)
+            setOnClickListener { configurePaper() }
+        })
+        layout.addView(Button(this).apply {
             text = getString(R.string.print_settings)
             setOnClickListener {
                 startActivity(Intent(Settings.ACTION_PRINT_SETTINGS))
@@ -95,9 +102,101 @@ class MainActivity : Activity() {
             .setItems(labels) { _, position ->
                 PrinterPreferences.saveDevice(this, devices[position])
                 updateStatus()
+                configurePaper()
             }
             .setNegativeButton(R.string.cancel, null)
             .show()
+    }
+
+    private fun configurePaper() {
+        val configuration = PrinterPreferences.load(this)
+        AlertDialog.Builder(this)
+            .setTitle(R.string.select_paper_title)
+            .setItems(
+                arrayOf(
+                    getString(R.string.paper_profile_58),
+                    getString(R.string.paper_profile_80),
+                    getString(R.string.paper_profile_custom)
+                )
+            ) { _, position ->
+                when (position) {
+                    0 -> savePaperProfile(configuration, PaperProfile.PAPER_58_MM)
+                    1 -> savePaperProfile(configuration, PaperProfile.PAPER_80_MM)
+                    else -> showCustomProfileDialog(configuration)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun showCustomProfileDialog(configuration: PrinterConfiguration) {
+        val current = configuration.paperProfile
+        val paperWidth = numericField(R.string.paper_width_mm, current.paperWidthMm)
+        val widthDots = numericField(R.string.printable_width_dots, current.widthDots)
+        val dpi = numericField(R.string.printer_dpi, current.dpi)
+        val threshold = numericField(R.string.print_threshold, current.threshold)
+        val fields = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(50, 20, 50, 0)
+            addView(paperWidth)
+            addView(widthDots)
+            addView(dpi)
+            addView(threshold)
+        }
+        val scrollView = ScrollView(this).apply { addView(fields) }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.custom_paper_title)
+            .setView(scrollView)
+            .setPositiveButton(R.string.save, null)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                try {
+                    val profile = PaperProfile(
+                        type = PaperProfileType.CUSTOM,
+                        paperWidthMm = paperWidth.requiredInt(),
+                        widthDots = widthDots.requiredInt(),
+                        dpi = dpi.requiredInt(),
+                        threshold = threshold.requiredInt()
+                    )
+                    savePaperProfile(configuration, profile)
+                    dialog.dismiss()
+                } catch (error: IllegalArgumentException) {
+                    Toast.makeText(
+                        this,
+                        error.message ?: getString(R.string.invalid_configuration),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
+        dialog.show()
+    }
+
+    private fun numericField(label: Int, value: Int): EditText {
+        return EditText(this).apply {
+            hint = getString(label)
+            contentDescription = getString(label)
+            inputType = InputType.TYPE_CLASS_NUMBER
+            setText(getString(R.string.integer_value, value))
+            selectAll()
+        }
+    }
+
+    private fun EditText.requiredInt(): Int {
+        return text.toString().toIntOrNull()
+            ?: throw IllegalArgumentException(getString(R.string.fill_all_fields))
+    }
+
+    private fun savePaperProfile(
+        configuration: PrinterConfiguration,
+        profile: PaperProfile
+    ) {
+        PrinterPreferences.saveProfile(this, configuration.address, profile)
+        updateStatus()
+        Toast.makeText(this, R.string.paper_configuration_saved, Toast.LENGTH_SHORT).show()
     }
 
     private fun updateStatus() {
@@ -106,15 +205,22 @@ class MainActivity : Activity() {
         val statusLabel = getString(
             if (available) R.string.printer_available else R.string.printer_unavailable
         )
+        val profile = configuration.paperProfile
         val widthLabel = resources.getQuantityString(
             R.plurals.printer_width_dots,
-            configuration.widthDots,
-            configuration.widthDots
+            profile.widthDots,
+            profile.widthDots
+        )
+        val paperLabel = getString(
+            R.string.paper_configuration,
+            profile.paperWidthMm,
+            widthLabel,
+            profile.dpi
         )
         status.text = getString(
             R.string.printer_status,
             configuration.name,
-            widthLabel,
+            paperLabel,
             statusLabel
         )
     }

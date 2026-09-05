@@ -6,13 +6,16 @@ import android.print.PrinterId
 import android.print.PrinterInfo
 import android.printservice.PrinterDiscoverySession
 import android.util.Log
+import kotlin.math.roundToInt
 
 class ThermalPrinterDiscoverySession(
     private val printService: ThermalPrintService
 ) : PrinterDiscoverySession() {
     companion object {
-        private const val TAG = "TMP58Discovery"
+        private const val TAG = "EscPosDiscovery"
+        // Mantido para que atualizações não criem uma segunda impressora no Android.
         private const val PRINTER_ID = "THERMAL_BLUETOOTH_58MM"
+        private const val VIRTUAL_PAGE_HEIGHT_MM = 200
     }
 
     override fun onStartPrinterDiscovery(priorityList: MutableList<PrinterId>) {
@@ -53,20 +56,21 @@ class ThermalPrinterDiscoverySession(
             PrinterInfo.STATUS_UNAVAILABLE
         }
 
-        val paper58mm = PrintAttributes.MediaSize(
-            "THERMAL_58MM",
-            "Papel térmico 58 mm",
-            2283,
-            7874
+        val profile = configuration.paperProfile
+        val configuredPaper = PrintAttributes.MediaSize(
+            "THERMAL_${profile.paperWidthMm}MM_${profile.widthDots}DOTS",
+            "Papel térmico ${profile.paperWidthMm} mm",
+            millimetersToMils(profile.paperWidthMm),
+            millimetersToMils(VIRTUAL_PAGE_HEIGHT_MM)
         )
         val capabilities = PrinterCapabilitiesInfo.Builder(printerId)
-            .addMediaSize(paper58mm, true)
+            .addMediaSize(configuredPaper, true)
             .addResolution(
                 PrintAttributes.Resolution(
-                    "203_DPI",
-                    "203 DPI",
-                    203,
-                    203
+                    "${profile.dpi}_DPI",
+                    "${profile.dpi} DPI",
+                    profile.dpi,
+                    profile.dpi
                 ),
                 true
             )
@@ -92,5 +96,9 @@ class ThermalPrinterDiscoverySession(
 
         addPrinters(listOf(printerInfo))
         Log.d(TAG, "Impressora configurada atualizada")
+    }
+
+    private fun millimetersToMils(millimeters: Int): Int {
+        return (millimeters * 1_000.0 / 25.4).roundToInt()
     }
 }

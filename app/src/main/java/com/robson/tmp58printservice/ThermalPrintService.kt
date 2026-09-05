@@ -1,6 +1,8 @@
 package com.robson.tmp58printservice
 
 import android.os.ParcelFileDescriptor
+import android.os.Handler
+import android.os.Looper
 import android.print.PrintJobId
 import android.printservice.PrintJob
 import android.printservice.PrintService
@@ -16,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 class ThermalPrintService : PrintService() {
     companion object {
-        private const val TAG = "TMP58PrintService"
+        private const val TAG = "EscPosPrintService"
     }
 
     private class ActiveJob {
@@ -30,6 +32,7 @@ class ThermalPrintService : PrintService() {
     }
 
     private val executor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
     private val activeJobs = ConcurrentHashMap<PrintJobId, ActiveJob>()
 
     override fun onCreatePrinterDiscoverySession(): PrinterDiscoverySession {
@@ -128,7 +131,7 @@ class ThermalPrintService : PrintService() {
             }
             ensureSent(printer, byteArrayOf(0x0A, 0x0A, 0x0A, 0x0A, 0x0A), activeJob)
             ensureNotCancelled(activeJob)
-            mainExecutor.execute {
+            mainHandler.post {
                 if (!activeJob.cancelled.get() && printJob.isStarted) {
                     printJob.complete()
                     Log.d(TAG, "Impressao concluida")
@@ -207,11 +210,11 @@ class ThermalPrintService : PrintService() {
     }
 
     private fun cancelOnMain(printJob: PrintJob) {
-        mainExecutor.execute { cancelSafely(printJob) }
+        mainHandler.post { cancelSafely(printJob) }
     }
 
     private fun failOnMain(printJob: PrintJob, message: String) {
-        mainExecutor.execute { failSafely(printJob, message) }
+        mainHandler.post { failSafely(printJob, message) }
     }
 
     private fun cancelSafely(printJob: PrintJob) {

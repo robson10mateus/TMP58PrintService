@@ -60,6 +60,14 @@ class EscPosTest {
     }
 
     @Test
+    fun rasterImage_encodesConfigured80mmWidthInHeader() {
+        val result = EscPos.rasterImage(576, 1, IntArray(576) { WHITE })
+
+        assertEquals(72, result[4].toInt())
+        assertEquals(0, result[5].toInt())
+    }
+
+    @Test
     fun rasterImage_compositesTransparentPixelsOverWhitePaper() {
         val transparentBlack = 0x00000000
 
